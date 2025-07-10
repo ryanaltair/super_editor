@@ -60,7 +60,7 @@ class _SliverExampleEditorState extends State<SliverExampleEditor> {
                   leading: const SizedBox(),
                   flexibleSpace: FlexibleSpaceBar(
                     background: Image.network(
-                      'https://i.imgur.com/fSZwM7G.jpg',
+                      'http://gips3.baidu.com/it/u=1821127123,1149655687&fm=3028&app=3028&f=JPEG&fmt=auto?w=720&h=1280',
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -140,7 +140,7 @@ MutableDocument _createInitialDocument() {
     nodes: [
       ImageNode(
         id: Editor.createNodeId(),
-        imageUrl: 'https://i.imgur.com/fSZwM7G.jpg',
+        imageUrl: 'http://gips3.baidu.com/it/u=1821127123,1149655687&fm=3028&app=3028&f=JPEG&fmt=auto?w=720&h=1280',
       ),
       ParagraphNode(
         id: Editor.createNodeId(),
