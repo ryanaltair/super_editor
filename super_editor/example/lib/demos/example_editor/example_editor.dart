@@ -578,12 +578,23 @@ class CustomerImageComponentBuilder implements ComponentBuilder {
     if (componentViewModel is! ImageComponentViewModel) {
       return null;
     }
-    if (componentViewModel.imageUrl.startsWith('http') == false)
-      return Image.file(
-        File(componentViewModel.imageUrl),
-        width: componentViewModel.expectedSize?.width?.toDouble(),
-        height: componentViewModel.expectedSize?.height?.toDouble(),
+    if (componentViewModel.imageUrl.startsWith('http') == false) {
+      return ImageComponent(
+        componentKey: componentContext.componentKey,
+        imageUrl: componentViewModel.imageUrl,
+        expectedSize: componentViewModel.expectedSize,
+        selection: componentViewModel.selection?.nodeSelection as UpstreamDownstreamNodeSelection?,
+        selectionColor: componentViewModel.selectionColor,
+        opacity: componentViewModel.opacity,
+        imageBuilder: (context, imageUrl) {
+          return Image.file(
+            File(componentViewModel.imageUrl),
+            width: componentViewModel.expectedSize?.width?.toDouble(),
+            height: componentViewModel.expectedSize?.height?.toDouble(),
+          );
+        },
       );
+    }
 
     return ImageComponent(
       componentKey: componentContext.componentKey,
