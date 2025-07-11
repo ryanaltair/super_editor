@@ -75,7 +75,6 @@ class _ExampleEditorState extends State<ExampleEditor> {
     _scrollController = ScrollController()..addListener(_hideOrShowToolbar);
 
     _iosControlsController = SuperEditorIosControlsController();
-    ToastContext().init(context);
   }
 
   @override

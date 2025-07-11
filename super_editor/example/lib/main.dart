@@ -41,6 +41,7 @@ import 'package:example/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:super_editor/super_editor.dart';
+import 'package:toast/toast.dart';
 
 /// Demo of a basic text editor, as well as various widgets that
 /// are available in this package.
@@ -102,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
+    ToastContext().init(context);
     super.initState();
 
     _selectedMenuItem = _menu[0].items[0];
