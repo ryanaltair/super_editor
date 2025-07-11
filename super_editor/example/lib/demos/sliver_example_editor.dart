@@ -24,15 +24,67 @@ class _SliverExampleEditorState extends State<SliverExampleEditor> {
   late MutableDocumentComposer _composer;
   late Editor _docEditor;
 
+  late EditListener _editListener;
+
+  late DocumentChangeListener _documentListener;
+
   @override
   void initState() {
     super.initState();
 
     _scrollController = ScrollController();
 
+    _editListener = FunctionalEditListener(_onEditorChange);
+
     _doc = _createInitialDocument();
     _composer = MutableDocumentComposer();
     _docEditor = createDefaultDocumentEditor(document: _doc, composer: _composer);
+    _docEditor.addListener(_editListener);
+    _docEditor.document.addListener(documentChangeLog);
+
+    Future.delayed(Duration(seconds: 3), () {
+      final endId = _docEditor.composer.selection?.end.nodeId ?? '';
+      if (endId.isEmpty) {
+        return;
+      }
+      final imageNode = ImageNode(
+        id: Editor.createNodeId(),
+        imageUrl: "http://gips3.baidu.com/it/u=1821127123,1149655687&fm=3028&app=3028&f=JPEG&fmt=auto?w=720&h=1280",
+        altText: '示例图片',
+      );
+      _docEditor.document.insertNodeAfter(existingNodeId: endId, newNode: imageNode);
+    });
+  }
+
+  void documentChangeLog(DocumentChangeLog changeLog) {
+    final text = _getDocumentText();
+    print('文本内容已更新: $text');
+    print(changeLog.changes);
+  }
+
+  // 提取文档中的纯文本内容
+  String _getDocumentText() {
+    final textBuffer = StringBuffer();
+    _docEditor.document.forEach((node) {
+      if (node is TextNode) {
+        textBuffer.write(node.text.text);
+        textBuffer.write('\n');
+      }
+    });
+
+    return textBuffer.toString().trim();
+  }
+
+  void _onEditorChange(changes) {
+    print(changes);
+    // setState(() {
+    //   // Build the latest list of changes.
+    // });
+
+    // // Always scroll to bottom of transaction list.
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _scrollController.position.jumpTo(_scrollController.position.maxScrollExtent);
+    // });
   }
 
   @override
@@ -78,7 +130,7 @@ class _SliverExampleEditorState extends State<SliverExampleEditor> {
                 SuperEditor(
                   editor: _docEditor,
                   stylesheet: defaultStylesheet.copyWith(
-                    documentPadding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
+                    documentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 0),
                   ),
                   debugPaint: const DebugPaintConfig(
                     gestures: _showDebugPaint,

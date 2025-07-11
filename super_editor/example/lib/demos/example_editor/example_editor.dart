@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:example/logging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:super_editor/super_editor.dart';
 import 'package:super_editor_markdown/super_editor_markdown.dart';
+import 'package:toast/toast.dart';
 
 import '_example_document.dart';
 import '_toolbar.dart';
@@ -19,6 +22,8 @@ class ExampleEditor extends StatefulWidget {
 class _ExampleEditorState extends State<ExampleEditor> {
   final GlobalKey _viewportKey = GlobalKey();
   final GlobalKey _docLayoutKey = GlobalKey();
+
+  final TextEditingController textEditingController = TextEditingController();
 
   late MutableDocument _doc;
   final _docChangeSignal = SignalNotifier();
@@ -49,6 +54,9 @@ class _ExampleEditorState extends State<ExampleEditor> {
     ..screenPadding = const EdgeInsets.all(20.0);
 
   late final SuperEditorIosControlsController _iosControlsController;
+  void showToast(String msg, {int? duration, int? gravity}) {
+    Toast.show(msg, duration: duration, gravity: gravity);
+  }
 
   @override
   void initState() {
@@ -67,6 +75,7 @@ class _ExampleEditorState extends State<ExampleEditor> {
     _scrollController = ScrollController()..addListener(_hideOrShowToolbar);
 
     _iosControlsController = SuperEditorIosControlsController();
+    ToastContext().init(context);
   }
 
   @override
@@ -332,9 +341,38 @@ class _ExampleEditorState extends State<ExampleEditor> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildDebugVisualsToggle(),
+          TextField(
+            controller: textEditingController,
+            decoration: InputDecoration(
+                hintText: '请选择光标位置输入链接地址支持网络和本地路径点击插入图片',
+                hintStyle: TextStyle(
+                  color: Colors.blue,
+                )),
+          ),
           const SizedBox(height: 16),
-          _buildLightAndDarkModeToggle(),
+          TextButton(
+            onPressed: () {
+              if (textEditingController.text.isEmpty) {
+                showToast('插入图片不能为空');
+                return;
+              }
+              final endId = _docEditor.composer.selection?.end.nodeId ?? '';
+              if (endId.isEmpty) {
+                return;
+              }
+              final imageNode = ImageNode(
+                id: Editor.createNodeId(),
+                imageUrl: textEditingController.text,
+                altText: '示例图片',
+              );
+              _docEditor.document.insertNodeAfter(existingNodeId: endId, newNode: imageNode);
+              setState(() {});
+            },
+            child: Container(
+              color: Colors.blue,
+              child: Text('插入图片'),
+            ),
+          )
         ],
       ),
     );
@@ -409,11 +447,9 @@ class _ExampleEditorState extends State<ExampleEditor> {
                 ],
               ],
               selectionLayerLinks: _selectionLayerLinks,
-              selectionStyle: isLight
-                  ? defaultSelectionStyle
-                  : SelectionStyles(
-                      selectionColor: Colors.red.withValues(alpha: 0.3),
-                    ),
+              selectionStyle: SelectionStyles(
+                selectionColor: Colors.red.withValues(alpha: 0.3),
+              ),
               stylesheet: defaultStylesheet.copyWith(
                 addRulesAfter: [
                   if (!isLight) ..._darkModeStyles,
@@ -421,8 +457,11 @@ class _ExampleEditorState extends State<ExampleEditor> {
                 ],
               ),
               componentBuilders: [
-                TaskComponentBuilder(_docEditor),
-                ...defaultComponentBuilders,
+                BlockquoteComponentBuilder(),
+                ParagraphComponentBuilder(),
+                ListItemComponentBuilder(),
+                HorizontalRuleComponentBuilder(),
+                CustomerImageComponentBuilder(),
               ],
               gestureMode: _gestureMode,
               inputSource: _inputSource,
@@ -511,6 +550,48 @@ class _ExampleEditorState extends State<ExampleEditor> {
         ]);
       },
       closeToolbar: _hideImageToolbar,
+    );
+  }
+}
+
+class CustomerImageComponentBuilder implements ComponentBuilder {
+  const CustomerImageComponentBuilder();
+
+  @override
+  SingleColumnLayoutComponentViewModel? createViewModel(Document document, DocumentNode node) {
+    if (node is! ImageNode) {
+      return null;
+    }
+
+    return ImageComponentViewModel(
+      nodeId: node.id,
+      createdAt: node.metadata[NodeMetadata.createdAt],
+      imageUrl: node.imageUrl,
+      expectedSize: node.expectedBitmapSize,
+      selectionColor: const Color(0x00000000),
+    );
+  }
+
+  @override
+  Widget? createComponent(
+      SingleColumnDocumentComponentContext componentContext, SingleColumnLayoutComponentViewModel componentViewModel) {
+    if (componentViewModel is! ImageComponentViewModel) {
+      return null;
+    }
+    if (componentViewModel.imageUrl.startsWith('http') == false)
+      return Image.file(
+        File(componentViewModel.imageUrl),
+        width: componentViewModel.expectedSize?.width?.toDouble(),
+        height: componentViewModel.expectedSize?.height?.toDouble(),
+      );
+
+    return ImageComponent(
+      componentKey: componentContext.componentKey,
+      imageUrl: componentViewModel.imageUrl,
+      expectedSize: componentViewModel.expectedSize,
+      selection: componentViewModel.selection?.nodeSelection as UpstreamDownstreamNodeSelection?,
+      selectionColor: componentViewModel.selectionColor,
+      opacity: componentViewModel.opacity,
     );
   }
 }
